@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Vérification Discord</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #121212; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .box { background: #1e1e1e; padding: 30px; border-radius: 8px; text-align: center; max-width: 400px; width: 100%; }
+        a { display: block; padding: 12px; background: #5865F2; color: white; text-decoration: none; font-weight: bold; border-radius: 4px; margin-top: 15px; }
+        a:hover { background: #4752C4; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>🛡️ Vérification d'Accès</h2>
+        <p>Cliquez sur le bouton ci-dessous pour valider votre identité avec Discord.</p>
+        <a id="btn" href="#">Se connecter avec Discord</a>
+    </div>
+    <script>
+        // Remplace par ton Client ID Discord et ton URL Vercel
+        const CLIENT_ID = "TON_CLIENT_ID_DISCORD";
+        const REDIRECT_URI = encodeURIComponent("https://TON-PROJET.vercel.app/api/auth");
+        
+        document.getElementById('btn').href = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=identify`;
+    </script>
+</body>
+</html>
