@@ -16,12 +16,16 @@
         <p>Cliquez sur le bouton ci-dessous pour valider votre identité avec Discord.</p>
         <a id="btn" href="#">Se connecter avec Discord</a>
     </div>
-    <script>
-        // Remplace par ton Client ID Discord et ton URL Vercel
-        const CLIENT_ID = "TON_CLIENT_ID_DISCORD";
-        const REDIRECT_URI = encodeURIComponent("https://TON-PROJET.vercel.app/api/auth");
-        
-        document.getElementById('btn').href = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=identify`;
-    </script>
+   <script>
+    // 1. Remplace par les chiffres de ton Client ID Discord (ex: 1541100881444085841)
+    const CLIENT_ID = "1541100881444085841"; 
+
+    // 2. Remplace par le VRAI nom de ton projet Vercel
+    const REDIRECT_URI = encodeURIComponent("https://verif-discord-clean.vercel.app/api/auth"); 
+
+    const oauthUrl = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=identify`;
+    
+    document.getElementById('btn').href = oauthUrl;
+</script>
 </body>
 </html>
