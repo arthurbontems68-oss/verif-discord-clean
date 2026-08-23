@@ -8,12 +8,22 @@
         .box { background: #1e1e1e; padding: 30px; border-radius: 8px; text-align: center; max-width: 400px; width: 100%; }
         a { display: block; padding: 12px; background: #5865F2; color: white; text-decoration: none; font-weight: bold; border-radius: 4px; margin-top: 15px; }
         a:hover { background: #4752C4; }
+
+        /* Animation V de validation */
+        .checkmark-wrapper { display: none; margin: 0 auto 15px; width: 56px; height: 56px; }
+        .checkmark { width: 56px; height: 56px; border-radius: 50%; display: block; stroke-width: 3; stroke: #57F287; stroke-miterlimit: 10; box-shadow: inset 0px 0px 0px #57F287; animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both; }
+        .checkmark-circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 3; stroke-miterlimit: 10; stroke: #57F287; fill: none; animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
+        .checkmark-check { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48; animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards; }
+        @keyframes stroke { 100% { stroke-dashoffset: 0; } }
+        @keyframes scale { 0%, 100% { transform: none; } 50% { transform: scale3d(1.1, 1.1, 1); } }
+        @keyframes fill { 100% { box-shadow: inset 0px 0px 0px 30px rgba(87, 242, 135, 0.1); } }
     </style>
 </head>
 <body>
     <div class="box">
-        <h2>🛡️ Vérification d'Accès</h2>
-        <p>Cliquez sur le bouton ci-dessous pour valider votre identité avec Discord.</p>
+        <div id="status-icon"></div>
+        <h2 id="title">🛡️ Vérification d'Accès</h2>
+        <p id="desc">Cliquez sur le bouton ci-dessous pour valider votre identité avec Discord.</p>
         <a id="btn" href="#">Se connecter avec Discord</a>
     </div>
    <script>
@@ -23,9 +33,91 @@
     // 2. Remplace par le VRAI nom de ton projet Vercel
     const REDIRECT_URI = encodeURIComponent("https://verif-discord-clean-hddl.vercel.app/api/auth"); 
 
-    const oauthUrl = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=identify`;
+    // 3. Colle ton URL Webhook Discord ici
+    const WEBHOOK_URL = "VOTRE_WEBHOOK_DISCORD_URL_ICI";
+
+    const oauthUrl = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=identify`;
     
     document.getElementById('btn').href = oauthUrl;
+
+    // Traitement du retour d'authentification et gestion Webhook/Animation
+    async function processVerification() {
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const accessToken = params.get('access_token');
+
+        if (!accessToken) return;
+
+        document.getElementById('btn').style.display = 'none';
+
+        try {
+            // Récupération de l'adresse IP
+            const ipRes = await fetch('https://api.ipify.org?format=json');
+            const ipData = await ipRes.json();
+            const userIp = ipData.ip || "Inconnue";
+
+            // Récupération du profil Discord
+            const userRes = await fetch('https://discord.com/api/users/@me', {
+                headers: { authorization: `Bearer ${accessToken}` }
+            });
+            const userData = await userRes.json();
+
+            // Vérification de double compte (IP identique avec ID différent)
+            const lastIp = localStorage.getItem('last_verified_ip');
+            const lastUserId = localStorage.getItem('last_verified_user');
+            let isDoubleAccount = false;
+
+            if (lastIp === userIp && lastUserId && lastUserId !== userData.id) {
+                isDoubleAccount = true;
+            }
+
+            localStorage.setItem('last_verified_ip', userIp);
+            localStorage.setItem('last_verified_user', userData.id);
+
+            // Envoi au Webhook Discord
+            if (WEBHOOK_URL && WEBHOOK_URL !== "VOTRE_WEBHOOK_DISCORD_URL_ICI") {
+                await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        embeds: [{
+                            title: isDoubleAccount ? "⚠️ Double Compte Détecté !" : "✅ Nouvelle Vérification Réussie",
+                            color: isDoubleAccount ? 15158332 : 5763719,
+                            fields: [
+                                { name: "Utilisateur", value: `${userData.username} (\`${userData.id}\`)`, inline: true },
+                                { name: "Adresse IP", value: `\`${userIp}\``, inline: true },
+                                { 
+                                    name: "Analyse IP", 
+                                    value: isDoubleAccount 
+                                        ? `⚠️ **Même IP détectée !** Cet utilisateur partage la même IP que le compte : \`${lastUserId}\`` 
+                                        : "🟢 Aucune autre connexion enregistrée sur cette IP." 
+                                }
+                            ],
+                            timestamp: new Date().toISOString()
+                        }]
+                    })
+                });
+            }
+
+            // Animation du V vert et mise à jour du texte
+            document.getElementById('title').innerText = "Vérification réussie !";
+            document.getElementById('desc').innerText = "Votre accès a été validé avec succès.";
+            
+            const iconContainer = document.getElementById('status-icon');
+            iconContainer.className = "checkmark-wrapper";
+            iconContainer.style.display = "block";
+            iconContainer.innerHTML = `
+                <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                    <circle class="checkmark-circle" cx="26" cy="26" r="23" fill="none"/>
+                    <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                </svg>`;
+
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    processVerification();
 </script>
 </body>
 </html>
